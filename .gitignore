@@ -172,3 +172,8 @@ UpgradeLog*.htm
 
 # Microsoft Fakes
 FakesAssemblies/
+/Voron.Graph.sln.ide/storage.ide
+/Voron.Graph.sln.ide/edbres00002.jrs
+/Voron.Graph.sln.ide/edbres00001.jrs
+/Voron.Graph.sln.ide/edb.chk
+/Voron.Graph.sln.ide

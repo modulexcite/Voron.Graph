@@ -43,20 +43,14 @@ namespace Voron.Graph.Indexing
 			_indexDirectory = runInMemory ? (Lucene.Net.Store.Directory)(new RAMDirectory()) : 
 											(Lucene.Net.Store.Directory)(new MMapDirectory(new DirectoryInfo(indexPath)));
 			_analyzer = analyzer;
-			CreateWriter();
-			_provider = new LuceneDataProvider(_indexDirectory, analyzer, Lucene.Net.Util.Version.LUCENE_30, _writer);
-		
-		}
-
-		public ISession<JObject> OpenSession()
-		{
-			return _provider.OpenSession<JObject>();
-		}
-
-		internal IndexWriter CreateWriter()
-		{
 			_writer = new IndexWriter(_indexDirectory, _analyzer ?? new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30), IndexWriter.MaxFieldLength.UNLIMITED);
-			return _writer;
+			_provider = new LuceneDataProvider(_indexDirectory, analyzer, Lucene.Net.Util.Version.LUCENE_30, _writer);
+		}
+
+		public ISession<T> OpenSession<T>()
+			where T : class,new()
+		{
+			return _provider.OpenSession<T>();
 		}
 
 		private void Dispose(bool isDisposing)

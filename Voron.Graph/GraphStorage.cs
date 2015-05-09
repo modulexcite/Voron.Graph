@@ -6,6 +6,7 @@ using System.Threading;
 using Voron.Graph.Extensions;
 using Voron.Graph.Impl;
 using Voron.Graph.Indexing;
+using Lucene.Net.Linq;
 
 namespace Voron.Graph
 {
@@ -42,6 +43,12 @@ namespace Voron.Graph
             _nextId = GetLatestStoredNodeKey();
         }
 
+		internal ISession<T> NewIndexingSession<T>()
+			where T : class, new()
+		{
+			return _index.OpenSession<T>();
+		}
+
         public Transaction NewTransaction(TransactionFlags flags, TimeSpan? timeout = null)
         {
             var voronTransaction = StorageEnvironment.NewTransaction(flags, timeout);
@@ -52,7 +59,7 @@ namespace Voron.Graph
                 _keyByEtagTreeName, 
                 _graphMetadataKey,
                 _nextId,
-				_index.OpenSession());
+				this);
         }
 
         private long GetLatestStoredNodeKey()

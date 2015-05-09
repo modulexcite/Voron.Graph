@@ -8,67 +8,67 @@ namespace Voron.Graph
 	public class Etag : IEquatable<Etag>, IComparable<Etag>, IComparable
 	{
 		private static long _globalCount;
-        private readonly static Etag _emptyInstance;
-        private readonly static Etag _invalidInstance;
+		private readonly static Etag _emptyInstance;
+		private readonly static Etag _invalidInstance;
 
-		private const int SizeOfLong = sizeof (long);
+		private const int SizeOfLong = sizeof(long);
 
 		private readonly long _timestamp;
 		private readonly long _count;
 
-        public const int Size = SizeOfLong * 2;
+		public const int Size = SizeOfLong * 2;
 
-        static Etag()
-        {
-            _emptyInstance = new Etag(0, 0);
-            _invalidInstance = new Etag(Int64.MinValue,Int64.MinValue);
-        }
+		static Etag()
+		{
+			_emptyInstance = new Etag(0, 0);
+			_invalidInstance = new Etag(long.MinValue, long.MinValue);
+		}
 
-        public long Count
-        {
-            get
-            {
-                return _count;
-            }
-        }
+		public long Count
+		{
+			get
+			{
+				return _count;
+			}
+		}
 
-        public long Timestamp
-        {
-            get
-            {
-                return _timestamp;
-            }
-        }
+		public long Timestamp
+		{
+			get
+			{
+				return _timestamp;
+			}
+		}
 
 		public Etag(long count, long timestamp)
 		{
 			_count = count;
 			_timestamp = timestamp;
-		}		
+		}
 
-        public Etag(byte[] etagBytes)
-        {
-            if (etagBytes == null || etagBytes.Length != Size)
-                throw new ArgumentException("Invalid etag byte array");
+		public Etag(byte[] etagBytes)
+		{
+			if (etagBytes == null || etagBytes.Length != Size)
+				throw new ArgumentException("Invalid etag byte array");
 
-            _timestamp = EndianBitConverter.Big.ToInt64(etagBytes, 0);
-            _count = EndianBitConverter.Big.ToInt64(etagBytes, SizeOfLong);
-        }
+			_timestamp = EndianBitConverter.Big.ToInt64(etagBytes, 0);
+			_count = EndianBitConverter.Big.ToInt64(etagBytes, SizeOfLong);
+		}
 
 		public static Etag Generate()
 		{
 			var count = Interlocked.Increment(ref _globalCount);
 			var timestamp = DateTime.UtcNow.Ticks;
 
-			return new Etag(count,timestamp);
+			return new Etag(count, timestamp);
 		}
 
 		public byte[] ToBytes()
 		{
-			var bytes = new byte[SizeOfLong*2];
-			EndianBitConverter.Big.CopyBytes(_timestamp,bytes,0);
-			EndianBitConverter.Big.CopyBytes(_count,bytes,SizeOfLong);
-            
+			var bytes = new byte[SizeOfLong * 2];
+			EndianBitConverter.Big.CopyBytes(_timestamp, bytes, 0);
+			EndianBitConverter.Big.CopyBytes(_count, bytes, SizeOfLong);
+
 			return bytes;
 		}
 
@@ -77,35 +77,35 @@ namespace Voron.Graph
 			return new MemoryStream(ToBytes());
 		}
 
-        public Slice ToSlice()
-        {
-            var sliceWriter = new SliceWriter(SizeOfLong * 2);
-            sliceWriter.WriteBigEndian(_timestamp);
-            sliceWriter.WriteBigEndian(_count);
-            
-            return sliceWriter.CreateSlice();
-        }
+		public Slice ToSlice()
+		{
+			var sliceWriter = new SliceWriter(SizeOfLong * 2);
+			sliceWriter.WriteBigEndian(_timestamp);
+			sliceWriter.WriteBigEndian(_count);
 
-        public override string ToString()
-        {
-            return String.Format("{0}-{1}", _timestamp, _count);
-        }
+			return sliceWriter.CreateSlice();
+		}
 
-        public static Etag Empty
-        {
-            get
-            {
-                return _emptyInstance;
-            }
-        }
-        
-        public static Etag Invalid
-        {
-            get
-            {
-                return _invalidInstance;
-            }
-        }
+		public override string ToString()
+		{
+			return String.Format("{0}-{1}", _timestamp, _count);
+		}
+
+		public static Etag Empty
+		{
+			get
+			{
+				return _emptyInstance;
+			}
+		}
+
+		public static Etag Invalid
+		{
+			get
+			{
+				return _invalidInstance;
+			}
+		}
 		#region Comparison Methods Implementation
 
 		public bool Equals(Etag other)
@@ -120,14 +120,14 @@ namespace Voron.Graph
 			if (ReferenceEquals(null, other)) return false;
 			if (ReferenceEquals(this, other)) return true;
 			if (other.GetType() != GetType()) return false;
-			return Equals((Etag) other);
+			return Equals((Etag)other);
 		}
 
 		public override int GetHashCode()
 		{
 			unchecked
 			{
-				return (_timestamp.GetHashCode()*397) ^ _count.GetHashCode();
+				return (_timestamp.GetHashCode() * 397) ^ _count.GetHashCode();
 			}
 		}
 
@@ -158,23 +158,23 @@ namespace Voron.Graph
 		#endregion
 
 
-        public int CompareTo(object otherObject)
-        {
-            if (otherObject == null)
-                return -1;
+		public int CompareTo(object otherObject)
+		{
+			if (otherObject == null)
+				return -1;
 
-            var otherEtag = otherObject as Etag;
-            return CompareTo(otherEtag);
-        }
+			var otherEtag = otherObject as Etag;
+			return CompareTo(otherEtag);
+		}
 
-        public int CompareTo(Etag otherEtag)
-        {
-            if (otherEtag == null)
-                return -1;
-            if (ReferenceEquals(this, otherEtag) || this == otherEtag)
-                return 0;
+		public int CompareTo(Etag otherEtag)
+		{
+			if (otherEtag == null)
+				return -1;
+			if (ReferenceEquals(this, otherEtag) || this == otherEtag)
+				return 0;
 
-            return this > otherEtag ? 1 : -1;
-        }
-    }
+			return this > otherEtag ? 1 : -1;
+		}
+	}
 }

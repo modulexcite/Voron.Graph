@@ -1,5 +1,4 @@
-﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -9,26 +8,20 @@ using System.Text;
 
 namespace Voron.Graph.Tests
 {
-    [TestClass]
-    public class BaseGraphTest
+    public class BaseGraphTest : IDisposable
     {
         public StorageEnvironment Env;
         public ConcurrentQueue<IDisposable> DisposalQueue;
 
         public StorageEnvironmentOptions StorageOptions;
 
-
-        public virtual void BeforeTestInitialize() { }
-
-        [TestInitialize]
-        public void BeforeTest()
+		public BaseGraphTest()
         {
             Env = new StorageEnvironment(StorageOptions ?? StorageEnvironmentOptions.CreateMemoryOnly());
             DisposalQueue = new ConcurrentQueue<IDisposable>();
         }
 
-        [TestCleanup]
-        public void AfterTest()
+        public void Dispose()
         {
             Env.Dispose();
             foreach (var disposable in DisposalQueue.Where(x => x != null))
