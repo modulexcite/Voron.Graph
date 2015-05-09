@@ -24,7 +24,7 @@ namespace Voron.Graph
 
         public GraphStorage(string graphName, StorageEnvironment storageEnvironment)
         {
-            if (String.IsNullOrWhiteSpace(graphName)) throw new ArgumentNullException("graphName");
+            if (string.IsNullOrWhiteSpace(graphName)) throw new ArgumentNullException("graphName");
             if (storageEnvironment == null) throw new ArgumentNullException("storageEnvironment");
             _nodeTreeName = graphName + Constants.NodeTreeNameSuffix;
             _edgeTreeName = graphName + Constants.EdgeTreeNameSuffix;
@@ -43,7 +43,13 @@ namespace Voron.Graph
             _nextId = GetLatestStoredNodeKey();
         }
 
-		internal ISession<T> NewIndexingSession<T>()
+		internal IQueryable<T> GetQuery<T>()
+			where T : class, new()
+		{
+			return _index.Query<T>();
+		}
+
+		internal ISession<T> GetIndexSession<T>()
 			where T : class, new()
 		{
 			return _index.OpenSession<T>();
@@ -124,7 +130,7 @@ namespace Voron.Graph
         {
 			var runInMemory = _storageEnvironment.Options is StorageEnvironmentOptions.PureMemoryStorageEnvironmentOptions;
 			_index = new Index(Constants.DataFolder, runInMemory);
-			Queries = new GraphQueries();
+			Queries = new GraphQueries(this);
             AdminQueries = new GraphAdminQueries();
 			Commands = new GraphCommands(Queries, Conventions);			
 		}

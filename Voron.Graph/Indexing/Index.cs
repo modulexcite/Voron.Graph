@@ -44,14 +44,20 @@ namespace Voron.Graph.Indexing
 											(Lucene.Net.Store.Directory)(new MMapDirectory(new DirectoryInfo(indexPath)));
 			_analyzer = analyzer;
 			_writer = new IndexWriter(_indexDirectory, _analyzer ?? new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30), IndexWriter.MaxFieldLength.UNLIMITED);
-			_provider = new LuceneDataProvider(_indexDirectory, analyzer, Lucene.Net.Util.Version.LUCENE_30, _writer);
-		}
+			_provider = new LuceneDataProvider(_indexDirectory, analyzer, Lucene.Net.Util.Version.LUCENE_30, _writer);			
+        }
 
 		public ISession<T> OpenSession<T>()
 			where T : class,new()
 		{
 			return _provider.OpenSession<T>();
 		}
+
+		public IQueryable<T> Query<T>()
+			where T : class,new()
+		{
+			return _provider.AsQueryable<T>();
+        }
 
 		private void Dispose(bool isDisposing)
 		{

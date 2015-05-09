@@ -109,12 +109,12 @@ namespace Voron.Graph
 		private readonly ConcurrentBag<Action> sessionCommitsCache = new ConcurrentBag<Action>();
 		private readonly ConcurrentBag<Action> sessionRollbacksCache = new ConcurrentBag<Action>();
 
-		public ISession<T> Index<T>()
+		internal ISession<T> Index<T>()
 			where T : class, new()
 		{
 			var session = (ISession<T>)sessionCache.GetOrAdd(typeof(T),key =>
 			{
-				var newSession = _storage.NewIndexingSession<T>();
+				var newSession = _storage.GetIndexSession<T>();
 				sessionCommitsCache.Add(() => newSession.Commit());
 				sessionRollbacksCache.Add(() => newSession.Rollback());
 
