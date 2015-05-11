@@ -1,9 +1,7 @@
-﻿using Newtonsoft.Json.Linq;
+﻿using Lucene.Net.Documents;
+using Newtonsoft.Json.Linq;
 using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Voron.Graph.Extensions;
 
 namespace Voron.Graph.Impl
@@ -15,11 +13,11 @@ namespace Voron.Graph.Impl
 
 		public GraphCommands(GraphQueries Queries, Conventions Conventions)
 		{
-			this._queries = Queries;
-			this._conventions = Conventions;
+			_queries = Queries;
+			_conventions = Conventions;
 		}
 
-		internal void CreateNode<T>(Transaction tx, T value)
+		public long CreateNode<T>(Transaction tx, T value)
 			where T : class, new()
 		{
 			if (tx == null) throw new ArgumentNullException("tx");
@@ -34,9 +32,38 @@ namespace Voron.Graph.Impl
 
 			tx.NodeTree.Add(nodeKey, serializedValue.ToStream());
 			tx.KeyByEtagTree.Add(etag.ToSlice(), nodeKey);
+			tx.EtagByKeyTree.Add(nodeKey, etag.ToStream());
 			tx.DisconnectedNodeTree.Add(nodeKey, serializedValue.ToStream());
 
-			tx.Index<T>().Add(value);
+			var indexDocument = value.ToDocument();
+			var idField = new NumericField(Constants.NodeIdFieldName);
+			idField.SetLongValue(key);
+			indexDocument.Add(idField);
+
+			tx.IndexWriter.AddDocument(indexDocument);
+
+			return key;
 		}
+
+		//public bool TryUpdate<T>(Transaction tx, long key, T newValue)
+		//	where T : class, new()
+		//{
+		//	if (tx == null) throw new ArgumentNullException("tx");
+
+		//	if (!_queries.ContainsNode(tx, key))
+		//		return false;
+
+		//	//Voron's method name here is misleading --> it performs updates as well
+		//	var etagReadResult = tx.EtagByKeyTree.Read(key.ToSlice());
+		//	etagReadResult.Reader.
+		//	tx.KeyByEtagTree.Delete(node.Etag.ToSlice());
+		//	var newEtag = Etag.Generate();
+		//	node.Etag = newEtag;
+
+		//	tx.NodeTree.Add(node.Key.ToSlice(), Util.EtagAndValueToStream(newEtag, node.Data));
+
+		//	tx.KeyByEtagTree.Add(newEtag.ToSlice(), node.Key.ToSlice());
+		//	return true;
+		//}
 	}
 }

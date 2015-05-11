@@ -1,9 +1,11 @@
-﻿using Lucene.Net.Linq;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Linq;
 using System.Collections.Concurrent;
 using Voron.Trees;
+using Voron.Impl;
+using Voron.Graph.Indexing;
+using Lucene.Net.Search;
 
 namespace Voron.Graph
 {
@@ -44,15 +46,19 @@ namespace Voron.Graph
 			}
 		}
 
+		private readonly IIndexWriter _indexWriter;
+		private readonly IndexSearcher _indexSearcher;
+		private readonly WriteBatch writeBatch;
 
 		internal Voron.Impl.Transaction VoronTransaction { get; private set; }
 
-		internal Transaction(Voron.Impl.Transaction voronTransaction,
-			string nodeTreeName,
-			string edgesTreeName,
-			string disconnectedNodesTreeName,
-			string keyByEtagTreeName,
-			string graphMetadataKey,
+		internal Transaction(Voron.Impl.Transaction voronTransaction, 
+			string nodeTreeName, 
+			string edgesTreeName, 
+			string disconnectedNodesTreeName, 
+			string keyByEtagTreeName, 
+			string etagByKeyTreeName, 
+			string graphMetadataKey, 
 			long nodeCount,
 			GraphStorage storage)
 		{
@@ -61,6 +67,7 @@ namespace Voron.Graph
 				throw new ArgumentNullException("voronTransaction");
 
 			_storage = storage;
+
 			VoronTransaction = voronTransaction;
 			_nodeCount = nodeCount;
 			NodeTree = voronTransaction.ReadTree(nodeTreeName);
@@ -69,7 +76,16 @@ namespace Voron.Graph
 			KeyByEtagTree = voronTransaction.ReadTree(keyByEtagTreeName);
 			SystemTree = voronTransaction.State.Root;
 			GraphMetadataKey = graphMetadataKey;
-		}
+			EtagByKeyTree = voronTransaction.ReadTree(etagByKeyTreeName);
+
+			if (voronTransaction.Flags == TransactionFlags.ReadWrite)
+			{
+				_indexWriter = _storage.NewIndexWriter();
+				writeBatch = new WriteBatch();
+			}
+
+			_indexSearcher = _storage.NewIndexSearcher();
+        }
 
 		internal string GraphMetadataKey { get; private set; }
 
@@ -83,45 +99,66 @@ namespace Voron.Graph
 
 		internal Tree KeyByEtagTree { get; private set; }
 
+		internal Tree EtagByKeyTree { get; private set; }
+
+		public WriteBatch WriteBatch
+		{
+			get
+			{
+				return writeBatch;
+			}
+		}
+
+		public IIndexWriter IndexWriter
+		{
+			get
+			{
+				return _indexWriter;
+			}
+		}
+
+		public Searcher Searcher
+		{
+			get
+			{
+				return _indexSearcher;
+			}
+		}
+
 		public void Dispose()
 		{
 			_isDisposed = true;
 			VoronTransaction.Dispose();
-			foreach (var session in sessionCache.Values)
-				((IDisposable)session).Dispose();
+			_indexSearcher.Dispose();
+            if (_indexWriter != null)
+				_indexWriter.Dispose();
 		}
 
 		public void Rollback()
 		{
 			VoronTransaction.Rollback();
-			foreach (var rollback in sessionRollbacksCache)
-				rollback();
-		}
+			if (_indexWriter != null)
+				_indexWriter.Rollback();
+        }
 
 		public void Commit()
 		{
 			VoronTransaction.Commit();
-			foreach (var commit in sessionCommitsCache)
-				commit();
+			if (VoronTransaction.Flags == TransactionFlags.ReadWrite)
+			{
+				_indexWriter.Commit();
+				_storage.Write(writeBatch);
+            }
 		}
 
-		private readonly ConcurrentDictionary<Type, object> sessionCache = new ConcurrentDictionary<Type, object>();
-		private readonly ConcurrentBag<Action> sessionCommitsCache = new ConcurrentBag<Action>();
-		private readonly ConcurrentBag<Action> sessionRollbacksCache = new ConcurrentBag<Action>();
+		private string _nodeTreeName;
+		private string _edgeTreeName;
+		private string _disconnectedNodesTreeName;
+		private string _keyByEtagTreeName;
+		private string _etagByKeyTreeName;
+		private string _graphMetadataKey;
+		private long _nextId;
+		private GraphStorage graphStorage;
 
-		internal ISession<T> Index<T>()
-			where T : class, new()
-		{
-			var session = (ISession<T>)sessionCache.GetOrAdd(typeof(T),key =>
-			{
-				var newSession = _storage.GetIndexSession<T>();
-				sessionCommitsCache.Add(() => newSession.Commit());
-				sessionRollbacksCache.Add(() => newSession.Rollback());
-
-				return newSession;
-			});
-
-			return session;
-		}	
     }
 }

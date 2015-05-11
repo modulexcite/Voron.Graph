@@ -15,6 +15,8 @@ namespace Voron.Graph
 
         public const string IndexedPropertyListKey = "IndexedProperties_SystemMetadata";
 		public readonly static string DataFolder = Directory.GetCurrentDirectory() + Path.DirectorySeparatorChar + "Data";
+		public const string EtagByKeyTreeNameSuffix = "_EtagByKeyTree";
+		public const string NodeIdFieldName = "__node_id";
 
-    }
+	}
 }

@@ -1,31 +1,17 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-using Lucene.Net;
 using Lucene.Net.Index;
 using Lucene.Net.Store;
 using Lucene.Net.Analysis.Standard;
 using Lucene.Net.Analysis;
-using Lucene.Net.Linq;
-using Lucene.Net.Linq.Abstractions;
-using Lucene.Net.Linq.Mapping;
-using Lucene.Net.Documents;
-using Lucene.Net.QueryParsers;
 using Lucene.Net.Search;
-using Newtonsoft.Json.Linq;
 
 namespace Voron.Graph.Indexing
 {
 	public class Index : IDisposable
 	{
 		private readonly Lucene.Net.Store.Directory _indexDirectory;
-		private IndexWriter _writer;
 		private Analyzer _analyzer;
-		private LuceneDataProvider _provider;
 
 		internal Lucene.Net.Store.Directory Directory
 		{
@@ -40,30 +26,40 @@ namespace Voron.Graph.Indexing
 		public Index(string indexPath,bool runInMemory = false, Analyzer analyzer = null)
 		{
 			_indexPath = indexPath;
-			_indexDirectory = runInMemory ? (Lucene.Net.Store.Directory)(new RAMDirectory()) : 
+			_indexDirectory = runInMemory ? (Lucene.Net.Store.Directory)(new RAMDirectory()) :
 											(Lucene.Net.Store.Directory)(new MMapDirectory(new DirectoryInfo(indexPath)));
-			_analyzer = analyzer;
-			_writer = new IndexWriter(_indexDirectory, _analyzer ?? new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30), IndexWriter.MaxFieldLength.UNLIMITED);
-			_provider = new LuceneDataProvider(_indexDirectory, analyzer, Lucene.Net.Util.Version.LUCENE_30, _writer);			
-        }
-
-		public ISession<T> OpenSession<T>()
-			where T : class,new()
-		{
-			return _provider.OpenSession<T>();
+			_analyzer = analyzer ?? new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);
 		}
 
-		public IQueryable<T> Query<T>()
-			where T : class,new()
+		public IIndexWriter OpenWriter()
 		{
-			return _provider.AsQueryable<T>();
-        }
+			return new LuceneWriter(CreateWriter());
+		}
+
+		public IndexSearcher OpenSearcher()
+		{
+			return new IndexSearcher(_indexDirectory);
+		}
+
+		private IndexWriter CreateWriter()
+		{
+			return new IndexWriter(_indexDirectory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
+		}
 
 		private void Dispose(bool isDisposing)
 		{
-			_writer.Dispose(isDisposing);
-			_indexDirectory.Dispose();
-			_provider.Dispose();
+			try
+			{
+				using (var writer = CreateWriter())
+				{
+					writer.Flush(true, true, true);
+					writer.Optimize(true);
+				}
+			}
+			finally
+			{
+				_indexDirectory.Dispose();
+			}
 		}
 
 		public void Dispose()

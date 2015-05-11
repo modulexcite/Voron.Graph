@@ -1,8 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Collections.Generic;
+using Voron.Graph.Extensions;
+using Lucene.Net.Search;
+using System.Linq.Expressions;
 
 namespace Voron.Graph.Impl
 {
@@ -15,10 +16,20 @@ namespace Voron.Graph.Impl
 			_storage = graphStorage;
 		}
 
-		public IQueryable<T> IndexQuery<T>()
-			where T : class, new()
+		public bool ContainsNode(Transaction tx, long key)
 		{
-			return _storage.GetQuery<T>();
+			if (tx == null) throw new ArgumentNullException("tx");
+
+			return tx.NodeTree.ReadVersion(key.ToSlice()) > 0;
+		}
+
+		public IEnumerable<T> Search<T>(Transaction tx, Expression<Func<T,bool>> predicate)
+			where T : class
+		{
+			var searchResults = tx.Searcher.AsQueryable<T>()
+										   .Where(predicate)
+										   .ToList();
+			throw new NotImplementedException();
 		}
 	}
 }

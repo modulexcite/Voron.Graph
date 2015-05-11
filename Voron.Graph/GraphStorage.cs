@@ -7,6 +7,8 @@ using Voron.Graph.Extensions;
 using Voron.Graph.Impl;
 using Voron.Graph.Indexing;
 using Lucene.Net.Linq;
+using Voron.Impl;
+using Lucene.Net.Search;
 
 namespace Voron.Graph
 {
@@ -17,8 +19,9 @@ namespace Voron.Graph
         private readonly string _nodeTreeName;
         private readonly string _edgeTreeName;
         private readonly string _disconnectedNodesTreeName;
-        private readonly string _keyByEtagTreeName;
-        private readonly string _graphMetadataKey;
+		private readonly string _keyByEtagTreeName;
+		private readonly string _etagByKeyTreeName;
+		private readonly string _graphMetadataKey;
 		private Index _index;
         private long _nextId;
 
@@ -30,8 +33,8 @@ namespace Voron.Graph
             _edgeTreeName = graphName + Constants.EdgeTreeNameSuffix;
             _disconnectedNodesTreeName = graphName + Constants.DisconnectedNodesTreeNameSuffix;
             _keyByEtagTreeName = graphName + Constants.KeyByEtagTreeNameSuffix;
-
-            _graphName = graphName;
+			_etagByKeyTreeName = graphName + Constants.EtagByKeyTreeNameSuffix;
+			_graphName = graphName;
             _storageEnvironment = storageEnvironment;
             _graphMetadataKey = graphName + Constants.GraphMetadataKeySuffix;
 
@@ -43,18 +46,6 @@ namespace Voron.Graph
             _nextId = GetLatestStoredNodeKey();
         }
 
-		internal IQueryable<T> GetQuery<T>()
-			where T : class, new()
-		{
-			return _index.Query<T>();
-		}
-
-		internal ISession<T> GetIndexSession<T>()
-			where T : class, new()
-		{
-			return _index.OpenSession<T>();
-		}
-
         public Transaction NewTransaction(TransactionFlags flags, TimeSpan? timeout = null)
         {
             var voronTransaction = StorageEnvironment.NewTransaction(flags, timeout);
@@ -63,10 +54,27 @@ namespace Voron.Graph
                 _edgeTreeName, 
                 _disconnectedNodesTreeName, 
                 _keyByEtagTreeName, 
+				_etagByKeyTreeName,
                 _graphMetadataKey,
                 _nextId,
 				this);
         }
+
+		internal IIndexWriter NewIndexWriter()
+		{
+			return _index.OpenWriter();
+		}
+
+		internal IndexSearcher NewIndexSearcher()
+		{
+			return _index.OpenSearcher();
+		}
+
+		internal void Write(WriteBatch writeBatch)
+		{
+			_storageEnvironment.Writer.Write(writeBatch);
+		}
+
 
         private long GetLatestStoredNodeKey()
         {
@@ -116,9 +124,10 @@ namespace Voron.Graph
                 StorageEnvironment.CreateTree(tx, _nodeTreeName);
                 StorageEnvironment.CreateTree(tx, _edgeTreeName);
                 StorageEnvironment.CreateTree(tx, _disconnectedNodesTreeName);
-                StorageEnvironment.CreateTree(tx, _keyByEtagTreeName);
+				StorageEnvironment.CreateTree(tx, _keyByEtagTreeName);
+				StorageEnvironment.CreateTree(tx, _etagByKeyTreeName);
 
-                if (tx.State.Root.ReadVersion(_graphMetadataKey) == 0)
+				if (tx.State.Root.ReadVersion(_graphMetadataKey) == 0)
                     tx.State.Root.Add(_graphMetadataKey, (new JObject()).ToStream());
 
                 tx.Commit();
