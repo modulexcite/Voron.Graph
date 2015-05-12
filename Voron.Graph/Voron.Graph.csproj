@@ -126,12 +126,11 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="C:\Work\ravendb\Raven.Voron\Voron\Voron.csproj">
+    <ProjectReference Include="..\..\ravendb\Raven.Voron\Voron\Voron.csproj">
       <Project>{ff83c7c2-bc7b-4dcc-a782-49ef9bbd9390}</Project>
       <Name>Voron</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
