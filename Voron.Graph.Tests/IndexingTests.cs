@@ -23,7 +23,6 @@ namespace Voron.Graph.Tests
 				}
 			}).ShouldNotThrow();
 		}
-
 	
 		[Fact]
 		public void Can_index_graph_nodes()
