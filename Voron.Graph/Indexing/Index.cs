@@ -21,12 +21,9 @@ namespace Voron.Graph.Indexing
 			}
 		}
 
-		private readonly string _indexPath;
-
-		public Index(string indexPath,bool runInMemory = false, Analyzer analyzer = null)
+	    public Index(string indexPath,bool runInMemory = false, Analyzer analyzer = null)
 		{
-			_indexPath = indexPath;
-			_indexDirectory = runInMemory ? (Lucene.Net.Store.Directory)(new RAMDirectory()) :
+		    _indexDirectory = runInMemory ? (Lucene.Net.Store.Directory)(new RAMDirectory()) :
 											(Lucene.Net.Store.Directory)(new MMapDirectory(new DirectoryInfo(indexPath)));
 			_analyzer = analyzer ?? new StandardAnalyzer(Lucene.Net.Util.Version.LUCENE_30);
 		}
@@ -46,6 +43,7 @@ namespace Voron.Graph.Indexing
 			return new IndexWriter(_indexDirectory, _analyzer, IndexWriter.MaxFieldLength.UNLIMITED);
 		}
 
+// ReSharper disable once UnusedParameter.Local
 		private void Dispose(bool isDisposing)
 		{
 			try

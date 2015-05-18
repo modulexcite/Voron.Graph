@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Collections.Generic;
+using Lucene.Net.Index;
 using Voron.Graph.Extensions;
 using Lucene.Net.Search;
 using System.Linq.Expressions;
@@ -26,10 +27,7 @@ namespace Voron.Graph.Impl
 		public IEnumerable<T> Search<T>(Transaction tx, Expression<Func<T,bool>> predicate)
 			where T : class
 		{
-			var searchResults = tx.Searcher.AsQueryable<T>()
-										   .Where(predicate)
-										   .ToList();
-			throw new NotImplementedException();
+		    throw new NotImplementedException();
 		}
 	}
 }

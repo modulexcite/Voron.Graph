@@ -57,7 +57,7 @@ namespace Voron.Graph.Tests
 
 			using (var tx = graph.NewTransaction(TransactionFlags.ReadWrite))
 			{
-				var queryResults = graph.Queries.Search<FooBar>(tx, doc => doc.Foo.StartsWith("Bar"));
+				var queryResults = graph.Queries.Search<FooBar>(tx, doc => doc.Foo == "Bar2");
 				var expectedResults = new[] { node2Data, node3Data };
 				queryResults.ShouldBeEquivalentTo(expectedResults);
 			}

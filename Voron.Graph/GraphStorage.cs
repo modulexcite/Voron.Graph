@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Newtonsoft.Json.Linq;
+﻿using Newtonsoft.Json.Linq;
 using System;
 using System.Threading;
 using Voron.Graph.Extensions;
 using Voron.Graph.Impl;
 using Voron.Graph.Indexing;
-using Lucene.Net.Linq;
 using Voron.Impl;
 using Lucene.Net.Search;
 
